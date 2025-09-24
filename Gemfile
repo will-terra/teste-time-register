@@ -44,4 +44,17 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Testing frameworks and utilities
+  gem "rspec-rails"
+  gem "factory_bot_rails"
+  gem "faker"
+  gem "shoulda-matchers"
+  gem "database_cleaner-active_record"
+end
+
+group :test do
+  # Code coverage analysis
+  gem "simplecov", require: false
+  gem "simplecov-html", require: false
 end
