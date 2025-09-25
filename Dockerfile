@@ -1,69 +1,130 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-# This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t teste_time_register .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name teste_time_register teste_time_register
+# Dockerfile multi-estágio otimizado para desenvolvimento e produção
+# Build: docker build -t teste_time_register .
+# Executar: docker run -d -p 3000:3000 --name teste_time_register teste_time_register
 
-# For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
-
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version
+# Certifique-se de que RUBY_VERSION corresponde à versão Ruby em .ruby-version
 ARG RUBY_VERSION=3.4.6
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
-# Rails app lives here
+# A aplicação Rails fica aqui
 WORKDIR /rails
 
-# Install base packages
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-# Set production environment
-ENV RAILS_ENV="production" \
-    BUNDLE_DEPLOYMENT="1" \
+# Definir variáveis de ambiente
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development"
+    BUNDLE_JOBS=4 \
+    BUNDLE_RETRY=3
 
-# Throw-away build stage to reduce size of final image
+# Instalar pacotes base e limpar em uma única camada
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      curl \
+      libjemalloc2 \
+      libvips \
+      postgresql-client \
+      tzdata \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# Configurar ambiente baseado em RAILS_ENV
+ARG RAILS_ENV=production
+ENV RAILS_ENV=$RAILS_ENV
+
+# Definir configuração do bundle baseado no ambiente
+RUN if [ "$RAILS_ENV" = "production" ]; then \
+      bundle config set --local deployment 'true' && \
+      bundle config set --local without 'development test'; \
+    else \
+      bundle config set --local without 'production'; \
+    fi
+
+# Estágio de build - estágio temporário para construir gems e compilar assets
 FROM base AS build
 
-# Install packages needed to build gems
+# Instalar pacotes necessários para construir gems e ferramentas de desenvolvimento
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libpq-dev libyaml-dev pkg-config && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+    apt-get install --no-install-recommends -y \
+      build-essential \
+      git \
+      libpq-dev \
+      libyaml-dev \
+      pkg-config \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Install application gems
+# Copiar arquivos de dependência primeiro para melhor cache
 COPY Gemfile Gemfile.lock ./
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    bundle exec bootsnap precompile --gemfile
 
-# Copy application code
+# Instalar gems e limpar artefatos de build
+RUN bundle install --jobs $BUNDLE_JOBS --retry $BUNDLE_RETRY && \
+    rm -rf ~/.bundle/ \
+           "${BUNDLE_PATH}"/ruby/*/cache \
+           "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git \
+           /tmp/* \
+           /var/tmp/*
+
+# Copiar código da aplicação
 COPY . .
 
-# Precompile bootsnap code for faster boot times
-RUN bundle exec bootsnap precompile app/ lib/
+# Pré-compilar bootsnap para inicialização mais rápida
+RUN bundle exec bootsnap precompile --gemfile && \
+    bundle exec bootsnap precompile app/ lib/
+
+# Criar diretórios e definir permissões
+RUN mkdir -p tmp/pids tmp/cache tmp/sockets log storage && \
+    chmod -R 755 tmp log storage
 
 
 
 
-# Final stage for app image
-FROM base
+# Estágio final de execução
+FROM base AS runtime
 
-# Copy built artifacts: gems, application
-COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
-COPY --from=build /rails /rails
+# Copiar artefatos construídos: gems e aplicação
+COPY --from=build --chown=1000:1000 "${BUNDLE_PATH}" "${BUNDLE_PATH}"
+COPY --from=build --chown=1000:1000 /rails /rails
 
-# Run and own only the runtime files as a non-root user for security
+# Criar usuário não-root para segurança
 RUN groupadd --system --gid 1000 rails && \
-    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
-USER 1000:1000
+    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
 
-# Entrypoint prepares the database.
+# Definir propriedade e permissões
+RUN chown -R rails:rails /rails && \
+    chmod +x /rails/bin/*
+
+# Trocar para usuário não-root
+USER rails:rails
+
+# Adicionar verificação de saúde
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:3000/up || exit 1
+
+# Entrypoint para preparar a aplicação
 ENTRYPOINT ["/rails/bin/docker-entrypoint"]
 
-# Start server via Thruster by default, this can be overwritten at runtime
-EXPOSE 80
+# Expor porta (3000 para desenvolvimento, pode ser sobrescrito)
+EXPOSE 3000
+
+# Comando padrão - pode ser sobrescrito no docker-compose
+CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
+
+# Estágio de produção com otimizações
+FROM runtime AS production
+
+# Voltar para root para instalar otimizações de produção
+USER root
+
+# Instalar pacotes específicos de produção
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+      logrotate \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+# Voltar para usuário rails
+USER rails:rails
+
+# Sobrescrever comando padrão para produção com Thruster
 CMD ["./bin/thrust", "./bin/rails", "server"]
+EXPOSE 80

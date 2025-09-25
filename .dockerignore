@@ -1,45 +1,90 @@
-# See https://docs.docker.com/engine/reference/builder/#dockerignore-file for more about ignoring files.
+# Veja https://docs.docker.com/engine/reference/builder/#dockerignore-file para mais sobre ignorar arquivos.
 
-# Ignore git directory.
+# Arquivos Git
 /.git/
 /.gitignore
+/.gitattributes
+/.gitmodules
 
-# Ignore bundler config.
+# Documentação
+README.md
+TESTES_README.md
+/doc/
+/docs/
+
+# Configuração do Bundler
 /.bundle
 
-# Ignore all environment files.
+# Arquivos de ambiente
 /.env*
+!/.env.example
 
-# Ignore all default key files.
+# Arquivos de segurança
 /config/master.key
 /config/credentials/*.key
 
-# Ignore all logfiles and tempfiles.
+# Logs e arquivos temporários
 /log/*
 /tmp/*
 !/log/.keep
 !/tmp/.keep
+*.log
 
-# Ignore pidfiles, but keep the directory.
+# Arquivos de processo
 /tmp/pids/*
 !/tmp/pids/.keep
 
-# Ignore storage (uploaded files in development and any SQLite databases).
+# Arquivos de armazenamento
 /storage/*
 !/storage/.keep
 /tmp/storage/*
 !/tmp/storage/.keep
 
-# Ignore CI service files.
-/.github
+# Arquivos de teste e cobertura
+/spec/
+/test/
+/coverage/
+/.rspec
+/.simplecov
 
-# Ignore Kamal files.
+# Ferramentas de desenvolvimento
+/.vscode/
+/.idea/
+*.sublime-*
+/.devcontainer
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Arquivos CI/CD
+/.github
+/.gitlab-ci.yml
+/.travis.yml
+/.circleci/
+
+# Artefatos de build
+/node_modules/
+/vendor/bundle/
+
+# Deploy Kamal
 /config/deploy*.yml
 /.kamal
 
-# Ignore development files
-/.devcontainer
-
-# Ignore Docker-related files
+# Próprios arquivos Docker
 /.dockerignore
 /Dockerfile*
+/docker-compose*.yml
+
+# Arquivos de banco de dados
+*.sqlite3
+*.sqlite3-*
+
+# Configurações de editor
+/.rubocop_todo.yml
+/.rubocop-*
+
+# Arquivos de tempo de execução
+*.pid
+.sass-cache/

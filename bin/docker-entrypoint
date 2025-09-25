@@ -1,14 +1,43 @@
 #!/bin/bash -e
 
-# Enable jemalloc for reduced memory usage and latency.
+# Imprimir informações de inicialização
+echo "🚀 Starting Time Register Application..."
+echo "📅 $(date)"
+echo "🏠 Environment: ${RAILS_ENV:-development}"
+echo "🐳 Container: $(hostname)"
+
+# Habilitar jemalloc para reduzir uso de memória e latência
 if [ -z "${LD_PRELOAD+x}" ]; then
     LD_PRELOAD=$(find /usr/lib -name libjemalloc.so.2 -print -quit)
     export LD_PRELOAD
+    echo "🧠 JeMalloc habilitado: $LD_PRELOAD"
 fi
 
-# If running the rails server then create or migrate existing database
-if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  ./bin/rails db:prepare
+# Aguardar até que o banco de dados esteja pronto
+if [ -n "$DATABASE_URL" ]; then
+    echo "🔍 Aguardando banco de dados..."
+    until ./bin/rails runner "ActiveRecord::Base.connection.execute('SELECT 1')" >/dev/null 2>&1; do
+        echo "⏳ Banco de dados ainda não está pronto, aguardando 2 segundos..."
+        sleep 2
+    done
+    echo "✅ Banco de dados está pronto!"
 fi
 
+# Configurar banco de dados se executando rails server
+if [ "${1}" = "./bin/rails" ] && [ "${2}" = "server" ]; then
+    echo "🗄️  Preparando banco de dados..."
+    ./bin/rails db:prepare
+    echo "✅ Banco de dados preparado!"
+fi
+
+# Configurar banco de dados se executando solid_queue
+if [ "${1}" = "./bin/rails" ] && [ "${2}" = "solid_queue:start" ]; then
+    echo "🔄 Iniciando worker de jobs em segundo plano..."
+fi
+
+# Criar diretórios necessários
+mkdir -p tmp/pids tmp/cache tmp/sockets log storage
+chmod -R 755 tmp log storage
+
+echo "🎯 Executando comando: $@"
 exec "${@}"
