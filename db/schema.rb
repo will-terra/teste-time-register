@@ -10,9 +10,26 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_24_013810) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_25_001211) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "reports", force: :cascade do |t|
+    t.uuid "process_id", null: false
+    t.bigint "user_id", null: false
+    t.string "status", default: "queued", null: false
+    t.integer "progress", default: 0, null: false
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.string "file_path"
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["process_id"], name: "index_reports_on_process_id", unique: true
+    t.index ["status"], name: "index_reports_on_status"
+    t.index ["user_id", "created_at"], name: "index_reports_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_reports_on_user_id"
+  end
 
   create_table "time_registers", force: :cascade do |t|
     t.bigint "user_id", null: false
@@ -31,5 +48,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_24_013810) do
     t.index ["email"], name: "index_users_on_email", unique: true
   end
 
+  add_foreign_key "reports", "users"
   add_foreign_key "time_registers", "users"
 end

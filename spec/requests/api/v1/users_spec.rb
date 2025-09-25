@@ -276,4 +276,210 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(JSON.parse(response.body)['error']).to eq('User not found')
     end
   end
+
+  describe 'POST /api/v1/users/:user_id/reports' do
+    include ActiveJob::TestHelper
+    
+    let(:user) { create(:user) }
+    let(:valid_report_params) do
+      {
+        start_date: '2025-09-01',
+        end_date: '2025-09-30'
+      }
+    end
+
+    context 'with valid parameters' do
+      it 'creates a new report request' do
+        expect {
+          post "/api/v1/users/#{user.id}/reports",
+               params: valid_report_params.to_json,
+               headers: valid_headers
+        }.to change(Report, :count).by(1)
+        
+        expect(response).to have_http_status(:created)
+      end
+
+      it 'returns process_id and status' do
+        post "/api/v1/users/#{user.id}/reports",
+             params: valid_report_params.to_json,
+             headers: valid_headers
+        
+        json_response = JSON.parse(response.body)
+        expect(json_response).to have_key('process_id')
+        expect(json_response).to have_key('status')
+        expect(json_response['status']).to eq('queued')
+        
+        # Verifica se é um UUID válido
+        uuid_pattern = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
+        expect(json_response['process_id']).to match(uuid_pattern)
+      end
+
+      it 'enqueues ReportGenerationJob' do
+        expect {
+          post "/api/v1/users/#{user.id}/reports",
+               params: valid_report_params.to_json,
+               headers: valid_headers
+        }.to have_enqueued_job(ReportGenerationJob)
+      end
+
+      it 'creates report with correct attributes' do
+        post "/api/v1/users/#{user.id}/reports",
+             params: valid_report_params.to_json,
+             headers: valid_headers
+        
+        report = Report.last
+        expect(report.user).to eq(user)
+        expect(report.start_date).to eq(Date.parse('2025-09-01'))
+        expect(report.end_date).to eq(Date.parse('2025-09-30'))
+        expect(report.status).to eq('queued')
+        expect(report.progress).to eq(0)
+      end
+
+      it 'handles same day start and end dates' do
+        same_day_params = {
+          start_date: '2025-09-15',
+          end_date: '2025-09-15'
+        }
+
+        post "/api/v1/users/#{user.id}/reports",
+             params: same_day_params.to_json,
+             headers: valid_headers
+        
+        expect(response).to have_http_status(:created)
+        report = Report.last
+        expect(report.start_date).to eq(report.end_date)
+      end
+    end
+
+    context 'with invalid parameters' do
+      it 'returns bad request when start_date is missing' do
+        invalid_params = { end_date: '2025-09-30' }
+        
+        post "/api/v1/users/#{user.id}/reports",
+             params: invalid_params.to_json,
+             headers: valid_headers
+        
+        expect(response).to have_http_status(:bad_request)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error']).to eq('start_date and end_date are required')
+      end
+
+      it 'returns bad request when end_date is missing' do
+        invalid_params = { start_date: '2025-09-01' }
+        
+        post "/api/v1/users/#{user.id}/reports",
+             params: invalid_params.to_json,
+             headers: valid_headers
+        
+        expect(response).to have_http_status(:bad_request)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error']).to eq('start_date and end_date are required')
+      end
+
+      it 'returns bad request when both dates are missing' do
+        post "/api/v1/users/#{user.id}/reports",
+             params: {}.to_json,
+             headers: valid_headers
+        
+        expect(response).to have_http_status(:bad_request)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error']).to eq('start_date and end_date are required')
+      end
+
+      it 'returns bad request when end_date is before start_date' do
+        invalid_params = {
+          start_date: '2025-09-30',
+          end_date: '2025-09-01'
+        }
+        
+        post "/api/v1/users/#{user.id}/reports",
+             params: invalid_params.to_json,
+             headers: valid_headers
+        
+        expect(response).to have_http_status(:bad_request)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error']).to eq('end_date must be after start_date')
+      end
+
+      it 'returns bad request for invalid date format' do
+        invalid_params = {
+          start_date: 'invalid-date',
+          end_date: '2025-09-30'
+        }
+        
+        post "/api/v1/users/#{user.id}/reports",
+             params: invalid_params.to_json,
+             headers: valid_headers
+        
+        expect(response).to have_http_status(:bad_request)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error']).to eq('Invalid date format. Use YYYY-MM-DD format')
+      end
+
+      it 'does not create report when validation fails' do
+        invalid_params = {
+          start_date: '2025-09-30',
+          end_date: '2025-09-01'
+        }
+        
+        expect {
+          post "/api/v1/users/#{user.id}/reports",
+               params: invalid_params.to_json,
+               headers: valid_headers
+        }.not_to change(Report, :count)
+      end
+
+      it 'does not enqueue job when validation fails' do
+        invalid_params = {
+          start_date: '2025-09-30',
+          end_date: '2025-09-01'
+        }
+        
+        expect {
+          post "/api/v1/users/#{user.id}/reports",
+               params: invalid_params.to_json,
+               headers: valid_headers
+        }.not_to have_enqueued_job(ReportGenerationJob)
+      end
+    end
+
+    context 'when user does not exist' do
+      it 'returns not found error' do
+        post '/api/v1/users/999999/reports',
+             params: valid_report_params.to_json,
+             headers: valid_headers
+        
+        expect(response).to have_http_status(:not_found)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error']).to eq('User not found')
+      end
+
+      it 'does not create report for non-existent user' do
+        expect {
+          post '/api/v1/users/999999/reports',
+               params: valid_report_params.to_json,
+               headers: valid_headers
+        }.not_to change(Report, :count)
+      end
+    end
+
+    context 'error handling' do
+      before do
+        # Simula um erro interno durante a criação do report
+        allow_any_instance_of(User).to receive(:reports).and_raise(StandardError.new('Database error'))
+      end
+
+      it 'handles internal server errors gracefully' do
+        expect(Rails.logger).to receive(:error).with(/Report creation failed/)
+        
+        post "/api/v1/users/#{user.id}/reports",
+             params: valid_report_params.to_json,
+             headers: valid_headers
+        
+        expect(response).to have_http_status(:internal_server_error)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error']).to eq('Internal server error')
+      end
+    end
+  end
 end

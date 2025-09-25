@@ -3,8 +3,17 @@ Rails.application.routes.draw do
     namespace :v1 do
       resources :users do
         get 'time_registers', to: 'users#time_registers'
+        post 'reports', to: 'users#reports'
       end
       resources :time_registers
+      
+      # Rotas para gerenciamento de relatórios
+      resources :reports, param: :process_id, only: [] do
+        member do
+          get 'status', to: 'reports#status'
+          get 'download', to: 'reports#download'
+        end
+      end
     end
   end
   
