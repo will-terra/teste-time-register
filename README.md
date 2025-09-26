@@ -2,16 +2,11 @@
 
 **Time-register** — Sistema de relógio de ponto (API-only) implementado em Ruby on Rails. Projeto de exemplo para demonstrar APIs RESTful, processamento assíncrono de relatórios, geração de CSV, população de dados e containerização com Docker. O foco deste repositório é fornecer uma API bem testada e pronta para demonstração técnica.
 
----
-
-## 1. Título e Descrição
-**time-register**
-
 API-only Rails app para controle de ponto (clock in / clock out). Permite CRUD de usuários e registros de ponto, geração de relatórios por período em background e download dos relatórios em CSV.
 
 ---
 
-## 2. Pré-requisitos
+## Pré-requisitos
 - Ruby 2.6+ / 3.x (Rails 6.0+ compatível)
 - Bundler
 - PostgreSQL (versão compatível com sua instalação de Rails)
@@ -21,7 +16,7 @@ API-only Rails app para controle de ponto (clock in / clock out). Permite CRUD d
 
 ---
 
-## 3. Instalação e Setup
+## Instalação e Setup
 ### Clone do repositório
 ```bash
 git clone https://github.com/will-terra/teste-time-register.git
@@ -53,7 +48,7 @@ rails runner db/seeds/populate_time_registers.rb
 
 ---
 
-## 4. Como Executar
+## Como Executar
 ### Desenvolvimento local
 ```bash
 # iniciar servidor Rails
@@ -79,7 +74,7 @@ Com cobertura (SimpleCov): ao rodar `rspec` será gerado `coverage/index.html`.
 
 ---
 
-## 5. Documentação da API
+## Documentação da API
 Base path: `/api/v1`
 
 ### Users
@@ -175,7 +170,7 @@ Base path: `/api/v1`
 
 ---
 
-## 6. Arquitetura do Projeto
+## Arquitetura do Projeto
 Estrutura de pastas (resumo):
 
 ```
@@ -208,7 +203,7 @@ Padrões e decisões técnicas:
 
 ---
 
-## 7. Testes
+## Testes
 - Suite de testes com **RSpec** cobrindo:
   - Model specs: validações e associações
   - Request specs: todos os endpoints da API
@@ -227,7 +222,7 @@ Os relatórios de cobertura ficam em `coverage/index.html`.
 
 ---
 
-## 8. Deploy (instruções básicas)
+## Deploy 
 - Build da imagem Docker (exemplo):
 ```bash
 docker build -t time-register:latest .
