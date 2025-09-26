@@ -24,7 +24,7 @@ API-only Rails app para controle de ponto (clock in / clock out). Permite CRUD d
 ## 3. Instalação e Setup
 ### Clone do repositório
 ```bash
-git clone <repo-url> time-register
+git clone https://github.com/will-terra/teste-time-register.git
 cd time-register
 ```
 
