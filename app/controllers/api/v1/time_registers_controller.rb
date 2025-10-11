@@ -1,5 +1,5 @@
 class Api::V1::TimeRegistersController < ApplicationController
-  before_action :set_time_register, only: [:show, :update, :destroy]
+  before_action :set_time_register, only: [ :show, :update, :destroy ]
 
   # GET /api/v1/time_registers
   def index
@@ -44,7 +44,7 @@ class Api::V1::TimeRegistersController < ApplicationController
   def set_time_register
     @time_register = TimeRegister.find(params[:id])
   rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Time register not found' }, status: :not_found
+    render json: { error: "Time register not found" }, status: :not_found
   end
 
   def time_register_params

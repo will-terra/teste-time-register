@@ -4,22 +4,22 @@ require 'rails_helper'
 
 RSpec.describe 'Report Generation Flow', type: :request do
   include ActiveJob::TestHelper
-  
+
   let(:user) { create(:user, name: 'João Silva', email: 'joao@empresa.com') }
   let(:valid_headers) { { 'Content-Type' => 'application/json' } }
 
   before do
     # Cria alguns registros de ponto para o usuário
-    create(:time_register, 
-           user: user, 
+    create(:time_register,
+           user: user,
            clock_in: 2.days.ago.beginning_of_day + 8.hours,
            clock_out: 2.days.ago.beginning_of_day + 17.hours)
-    
-    create(:time_register, 
-           user: user, 
+
+    create(:time_register,
+           user: user,
            clock_in: 1.day.ago.beginning_of_day + 9.hours,
            clock_out: 1.day.ago.beginning_of_day + 18.hours)
-    
+
     # Limpa diretório de relatórios
     FileUtils.rm_rf(Rails.root.join('tmp', 'reports'))
   end
@@ -40,7 +40,7 @@ RSpec.describe 'Report Generation Flow', type: :request do
            headers: valid_headers
 
       expect(response).to have_http_status(:created)
-      
+
       response_data = JSON.parse(response.body)
       process_id = response_data['process_id']
       expect(process_id).to be_present
@@ -49,7 +49,7 @@ RSpec.describe 'Report Generation Flow', type: :request do
       # 2. Verifica status inicial (queued)
       get "/api/v1/reports/#{process_id}/status"
       expect(response).to have_http_status(:ok)
-      
+
       status_data = JSON.parse(response.body)
       expect(status_data['status']).to eq('queued')
       expect(status_data['progress']).to eq(0)
@@ -60,7 +60,7 @@ RSpec.describe 'Report Generation Flow', type: :request do
       # 4. Verifica status após processamento (completed)
       get "/api/v1/reports/#{process_id}/status"
       expect(response).to have_http_status(:ok)
-      
+
       final_status = JSON.parse(response.body)
       expect(final_status['status']).to eq('completed')
       expect(final_status['progress']).to eq(100)
@@ -70,7 +70,7 @@ RSpec.describe 'Report Generation Flow', type: :request do
       get "/api/v1/reports/#{process_id}/download"
       expect(response).to have_http_status(:ok)
       expect(response.content_type).to eq('text/csv')
-      
+
       # Verifica conteúdo do CSV
       csv_content = response.body.force_encoding('UTF-8')
       expect(csv_content).to include('Nome do Usuário,Email,Data,Entrada,Saída,Horas Trabalhadas,Status')
@@ -106,7 +106,7 @@ RSpec.describe 'Report Generation Flow', type: :request do
 
       # Verifica que status foi atualizado para failed
       get "/api/v1/reports/#{process_id}/status"
-      
+
       status_data = JSON.parse(response.body)
       expect(status_data['status']).to eq('failed')
       expect(status_data['error_message']).to eq('Disk full')
@@ -141,7 +141,7 @@ RSpec.describe 'Report Generation Flow', type: :request do
       # Faz download e verifica conteúdo vazio
       get "/api/v1/reports/#{process_id}/download"
       csv_content = response.body.force_encoding('UTF-8')
-      
+
       lines = csv_content.strip.split("\n")
       expect(lines.length).to eq(1) # Apenas cabeçalho
       expect(lines.first).to include('Nome do Usuário,Email,Data,Entrada,Saída,Horas Trabalhadas,Status')
@@ -161,7 +161,7 @@ RSpec.describe 'Report Generation Flow', type: :request do
       # Tenta download antes do processamento
       get "/api/v1/reports/#{process_id}/download"
       expect(response).to have_http_status(:unprocessable_entity)
-      
+
       error_data = JSON.parse(response.body)
       expect(error_data['error']).to include('Report is not ready for download')
     end

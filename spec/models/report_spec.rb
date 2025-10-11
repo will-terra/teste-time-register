@@ -9,7 +9,7 @@ RSpec.describe Report, type: :model do
 
   describe 'validations' do
     subject { build(:report) }
-    
+
     it { should validate_uniqueness_of(:process_id).ignoring_case_sensitivity }
     it { should validate_inclusion_of(:status).in_array(%w[queued processing completed failed]) }
     it { should validate_presence_of(:start_date) }
@@ -58,7 +58,7 @@ RSpec.describe Report, type: :model do
         it 'sets process_id if not present' do
           report = Report.new(user: create(:user), start_date: 1.week.ago.to_date, end_date: Date.current)
           expect(report.process_id).to be_nil
-          
+
           report.valid?
           expect(report.process_id).to be_present
           expect(report.process_id).to match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i)
@@ -67,12 +67,12 @@ RSpec.describe Report, type: :model do
         it 'does not override existing process_id' do
           custom_uuid = SecureRandom.uuid
           report = Report.new(
-            user: create(:user), 
+            user: create(:user),
             process_id: custom_uuid,
-            start_date: 1.week.ago.to_date, 
+            start_date: 1.week.ago.to_date,
             end_date: Date.current
           )
-          
+
           report.valid?
           expect(report.process_id).to eq(custom_uuid)
         end
@@ -80,7 +80,7 @@ RSpec.describe Report, type: :model do
         it 'sets status to queued if not present' do
           report = Report.new(user: create(:user), start_date: 1.week.ago.to_date, end_date: Date.current)
           report.status = nil
-          
+
           report.valid?
           expect(report.status).to eq('queued')
         end
@@ -88,7 +88,7 @@ RSpec.describe Report, type: :model do
         it 'sets progress to 0 if not present' do
           report = Report.new(user: create(:user), start_date: 1.week.ago.to_date, end_date: Date.current)
           report.progress = nil
-          
+
           report.valid?
           expect(report.progress).to eq(0)
         end
@@ -162,13 +162,13 @@ RSpec.describe Report, type: :model do
 
       it 'returns true when file_path is present and file exists' do
         # Cria um arquivo temporário
-        temp_file = Tempfile.new(['test_report', '.csv'])
+        temp_file = Tempfile.new([ 'test_report', '.csv' ])
         temp_file.write('test,data')
         temp_file.close
-        
+
         report.update!(file_path: temp_file.path)
         expect(report.file_exists?).to be true
-        
+
         # Limpa o arquivo temporário
         temp_file.unlink
       end
@@ -181,9 +181,9 @@ RSpec.describe Report, type: :model do
 
     it 'destroys associated reports when user is destroyed' do
       report_ids = reports.map(&:id)
-      
+
       expect { user.destroy! }.to change { Report.count }.by(-3)
-      
+
       report_ids.each do |id|
         expect(Report.find_by(id: id)).to be_nil
       end

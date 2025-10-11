@@ -18,7 +18,7 @@ RSpec.describe TimeRegister, type: :model do
       context 'when user has no existing open registers' do
         it 'allows creating an open time register' do
           time_register = build(:time_register, :open, user: user)
-          
+
           expect(time_register).to be_valid
         end
       end
@@ -30,7 +30,7 @@ RSpec.describe TimeRegister, type: :model do
 
         it 'does not allow creating another open register' do
           time_register = build(:time_register, :open, user: user)
-          
+
           expect(time_register).to_not be_valid
           expect(time_register.errors[:base]).to include('User already has an open time register')
         end
@@ -43,7 +43,7 @@ RSpec.describe TimeRegister, type: :model do
 
         it 'allows creating a closed register even with existing open register' do
           time_register = build(:time_register, :closed, user: user)
-          
+
           expect(time_register).to be_valid
         end
       end
@@ -53,7 +53,7 @@ RSpec.describe TimeRegister, type: :model do
 
         it 'allows updating the same register without validation error' do
           existing_register.clock_in = 1.hour.ago
-          
+
           expect(existing_register).to be_valid
         end
       end
@@ -77,7 +77,7 @@ RSpec.describe TimeRegister, type: :model do
       context 'when clock_out is after clock_in' do
         it 'is valid' do
           time_register = build(:time_register, clock_in: 2.hours.ago, clock_out: 1.hour.ago)
-          
+
           expect(time_register).to be_valid
         end
       end
@@ -85,7 +85,7 @@ RSpec.describe TimeRegister, type: :model do
       context 'when clock_out is before clock_in' do
         it 'is invalid' do
           time_register = build(:time_register, clock_in: 1.hour.ago, clock_out: 2.hours.ago)
-          
+
           expect(time_register).to_not be_valid
           expect(time_register.errors[:clock_out]).to include('must be after clock in time')
         end
@@ -93,10 +93,10 @@ RSpec.describe TimeRegister, type: :model do
 
       context 'when clock_out equals clock_in' do
         let(:time) { 1.hour.ago }
-        
+
         it 'is invalid' do
           time_register = build(:time_register, clock_in: time, clock_out: time)
-          
+
           expect(time_register).to_not be_valid
           expect(time_register.errors[:clock_out]).to include('must be after clock in time')
         end
@@ -105,7 +105,7 @@ RSpec.describe TimeRegister, type: :model do
       context 'when clock_out is nil (open register)' do
         it 'does not validate clock_out timing' do
           time_register = build(:time_register, :open)
-          
+
           expect(time_register).to be_valid
         end
       end
@@ -113,7 +113,7 @@ RSpec.describe TimeRegister, type: :model do
       context 'when clock_in is nil' do
         it 'does not validate clock_out timing' do
           time_register = build(:time_register, clock_in: nil, clock_out: 1.hour.ago)
-          
+
           # Should be invalid due to clock_in presence validation, not the custom validation
           expect(time_register).to_not be_valid
           expect(time_register.errors[:clock_out]).to_not include('must be after clock in time')
@@ -128,14 +128,14 @@ RSpec.describe TimeRegister, type: :model do
     it 'allows creating multiple closed registers for the same user' do
       create(:time_register, :closed, user: user)
       second_register = build(:time_register, :closed, user: user)
-      
+
       expect(second_register).to be_valid
     end
 
     it 'prevents creating second open register even with different times' do
       create(:time_register, :open, user: user, clock_in: 2.hours.ago)
       second_register = build(:time_register, :open, user: user, clock_in: 1.hour.ago)
-      
+
       expect(second_register).to_not be_valid
       expect(second_register.errors[:base]).to include('User already has an open time register')
     end
@@ -143,7 +143,7 @@ RSpec.describe TimeRegister, type: :model do
     it 'allows reopening after closing a register' do
       register = create(:time_register, :open, user: user)
       register.update!(clock_out: 1.hour.ago)
-      
+
       new_register = build(:time_register, :open, user: user)
       expect(new_register).to be_valid
     end

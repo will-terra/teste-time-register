@@ -22,8 +22,8 @@ RSpec.describe ReportGenerationJob, type: :job do
     context 'when report exists and user has time registers' do
       let!(:time_registers) do
         [
-          create(:time_register, 
-                 user: user, 
+          create(:time_register,
+                 user: user,
                  clock_in: 2.days.ago.beginning_of_day + 8.hours,
                  clock_out: 2.days.ago.beginning_of_day + 17.hours),
           create(:time_register,
@@ -42,7 +42,7 @@ RSpec.describe ReportGenerationJob, type: :job do
 
       it 'creates the CSV file in the correct location' do
         perform_enqueued_jobs { described_class.perform_later(report.id) }
-        
+
         report.reload
         expect(report.file_path).to be_present
         expect(File.exist?(report.file_path)).to be true
@@ -50,10 +50,10 @@ RSpec.describe ReportGenerationJob, type: :job do
 
       it 'generates CSV with correct content structure' do
         perform_enqueued_jobs { described_class.perform_later(report.id) }
-        
+
         report.reload
         csv_content = File.read(report.file_path)
-        
+
         expect(csv_content).to include('Nome do Usuário,Email,Data,Entrada,Saída,Horas Trabalhadas,Status')
         expect(csv_content).to include(user.name)
         expect(csv_content).to include(user.email)
@@ -62,17 +62,17 @@ RSpec.describe ReportGenerationJob, type: :job do
 
       it 'calculates worked hours correctly' do
         perform_enqueued_jobs { described_class.perform_later(report.id) }
-        
+
         report.reload
         csv_content = File.read(report.file_path)
-        
+
         expect(csv_content).to include('9h 0m') # First register: 17h - 8h = 9h
         expect(csv_content).to include('Total: 18h 0m') # Total: 9h + 9h = 18h
       end
 
       it 'updates progress during execution' do
         perform_enqueued_jobs { described_class.perform_later(report.id) }
-        
+
         # Verifica se o progresso foi atualizado corretamente
         report.reload
         expect(report.status).to eq('completed')
@@ -83,11 +83,11 @@ RSpec.describe ReportGenerationJob, type: :job do
     context 'when user has no time registers in the period' do
       it 'generates empty CSV successfully' do
         perform_enqueued_jobs { described_class.perform_later(report.id) }
-        
+
         report.reload
         expect(report.status).to eq('completed')
         expect(report.progress).to eq(100)
-        
+
         csv_content = File.read(report.file_path)
         lines = csv_content.split("\n")
         expect(lines.length).to eq(1) # Apenas o cabeçalho
@@ -104,10 +104,10 @@ RSpec.describe ReportGenerationJob, type: :job do
 
       it 'handles open registers correctly' do
         perform_enqueued_jobs { described_class.perform_later(report.id) }
-        
+
         report.reload
         csv_content = File.read(report.file_path)
-        
+
         expect(csv_content).to include('Em andamento')
         expect(csv_content).to include('0h 0m') # Sem horas trabalhadas para registro aberto
       end
@@ -131,7 +131,7 @@ RSpec.describe ReportGenerationJob, type: :job do
         expect {
           described_class.new.perform(report.id)
         }.to raise_error(StandardError, 'Disk full')
-        
+
         report.reload
         expect(report.status).to eq('failed')
         expect(report.error_message).to eq('Disk full')
@@ -141,7 +141,7 @@ RSpec.describe ReportGenerationJob, type: :job do
       it 'logs the error' do
         expect(Rails.logger).to receive(:error).with(/Report generation failed for report #{report.id}/)
         expect(Rails.logger).to receive(:error).with(anything) # backtrace
-        
+
         expect {
           described_class.new.perform(report.id)
         }.to raise_error(StandardError)

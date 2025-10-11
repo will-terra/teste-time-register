@@ -14,6 +14,6 @@ class CreateReports < ActiveRecord::Migration[8.0]
     end
     add_index :reports, :process_id, unique: true
     add_index :reports, :status
-    add_index :reports, [:user_id, :created_at]
+    add_index :reports, [ :user_id, :created_at ]
   end
 end

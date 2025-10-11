@@ -9,7 +9,7 @@ RSpec.describe User, type: :model do
 
   describe 'validations' do
     subject { build(:user) }
-    
+
     it { should validate_presence_of(:name) }
     it { should validate_presence_of(:email) }
     it { should validate_uniqueness_of(:email) }
@@ -68,9 +68,9 @@ RSpec.describe User, type: :model do
 
     it 'destroys associated time registers when user is destroyed' do
       time_register_ids = user.time_registers.pluck(:id)
-      
+
       expect { user.destroy! }.to change { TimeRegister.count }.by(-3)
-      
+
       time_register_ids.each do |id|
         expect(TimeRegister.find_by(id: id)).to be_nil
       end

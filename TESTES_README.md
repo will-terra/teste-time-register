@@ -1,49 +1,49 @@
-# Suíte de Testes Completa - Time Register API
+# Complete Test Suite - Time Register API
 
-## 🧪 Tipos de Testes Implementados
+## Implemented Test Types
 
-### ✅ Model Specs (Validações e Associações)
-- **User Model**: 13 testes
-  - Validações de presença (name, email)
-  - Validação de unicidade e formato de email
-  - Associação `has_many :time_registers`
-  - Método `has_open_time_register?`
-  - Dependent destroy de time_registers
+### Model Specs (Validations and Associations)
+- **User Model**: 13 tests
+  - Presence validations (name, email)
+  - Email uniqueness and format validation
+  - `has_many :time_registers` association
+  - `has_open_time_register?` method
+  - Dependent destroy for time_registers
 
-- **TimeRegister Model**: 18 testes
-  - Validação de presença (clock_in)
-  - Associação `belongs_to :user`
-  - Validação customizada: usuário não pode ter múltiplos registros abertos
-  - Validação customizada: clock_out deve ser após clock_in
-  - Cenários complexos de negócio
+- **TimeRegister Model**: 18 tests
+  - Presence validation (clock_in)
+  - `belongs_to :user` association
+  - Custom validation: user cannot have multiple open records
+  - Custom validation: clock_out must be after clock_in
+  - Complex business logic scenarios
 
-### ✅ Request Specs (Endpoints da API)
-- **Users API**: 23 testes
-  - GET `/api/v1/users` - Lista usuários
-  - GET `/api/v1/users/:id` - Busca usuário específico
-  - POST `/api/v1/users` - Cria novo usuário
-  - PUT `/api/v1/users/:id` - Atualiza usuário
-  - DELETE `/api/v1/users/:id` - Remove usuário
-  - GET `/api/v1/users/:id/time_registers` - Registros do usuário
+### Request Specs (API Endpoints)
+- **Users API**: 23 tests
+  - GET `/api/v1/users` - List users
+  - GET `/api/v1/users/:id` - Find specific user
+  - POST `/api/v1/users` - Create new user
+  - PUT `/api/v1/users/:id` - Update user
+  - DELETE `/api/v1/users/:id` - Remove user
+  - GET `/api/v1/users/:id/time_registers` - User's records
 
-- **Time Registers API**: 29 testes
-  - GET `/api/v1/time_registers` - Lista todos os registros
-  - GET `/api/v1/time_registers/:id` - Busca registro específico
-  - POST `/api/v1/time_registers` - Cria novo registro
-  - PUT `/api/v1/time_registers/:id` - Atualiza registro
-  - DELETE `/api/v1/time_registers/:id` - Remove registro
-  - Casos extremos e lógica de negócio
+- **Time Registers API**: 29 tests
+  - GET `/api/v1/time_registers` - List all records
+  - GET `/api/v1/time_registers/:id` - Find specific record
+  - POST `/api/v1/time_registers` - Create new record
+  - PUT `/api/v1/time_registers/:id` - Update record
+  - DELETE `/api/v1/time_registers/:id` - Remove record
+  - Edge cases and business logic
 
-### ✅ Integration Specs (Fluxos Completos)
-- **Fluxo Completo de Rastreamento**: 4 testes
-  - Registro de usuário → Clock in → Clock out → Múltiplas entradas
-  - Gerenciamento de múltiplos usuários simultâneos
-  - Tratamento de erros e casos extremos
-  - Consistência de dados em operações complexas
+### Integration Specs (Complete Flows)
+- **Complete Tracking Flow**: 4 tests
+  - User registration → Clock in → Clock out → Multiple entries
+  - Simultaneous multiple user management
+  - Error handling and edge cases
+  - Data consistency in complex operations
 
-## 🏗️ Configuração de Testes
+## Test Configuration
 
-### Gems Adicionadas
+### Added Gems
 ```ruby
 group :development, :test do
   gem "rspec-rails"
@@ -59,66 +59,65 @@ group :test do
 end
 ```
 
-### Configurações
-- **RSpec**: Configurado com helper completo
-- **SimpleCov**: Cobertura mínima de 90%, filtros apropriados
-- **FactoryBot**: Factories para User e TimeRegister
-- **DatabaseCleaner**: Estratégia de transação para performance
-- **Shoulda Matchers**: Testes de validação e associação
+### Configurations
+- **RSpec**: Configured with complete helper
+- **SimpleCov**: Minimum 90% coverage, appropriate filters
+- **FactoryBot**: Factories for User and TimeRegister
+- **DatabaseCleaner**: Transaction strategy for performance
+- **Shoulda Matchers**: Validation and association tests
 
-## 📁 Estrutura de Testes
+## Test Structure
 
 ```
 spec/
-├── rails_helper.rb          # Configuração principal
-├── spec_helper.rb          # Configuração do RSpec
+├── rails_helper.rb          # Main configuration
+├── spec_helper.rb          # RSpec configuration
 ├── support/
-│   └── shoulda_matchers.rb # Configuração Shoulda
+│   └── shoulda_matchers.rb # Shoulda configuration
 ├── factories/
-│   ├── users.rb           # Factory para usuários
-│   └── time_registers.rb  # Factory para registros
+│   ├── users.rb           # User factory
+│   └── time_registers.rb  # Time register factory
 ├── models/
-│   ├── user_spec.rb       # Testes do modelo User
-│   └── time_register_spec.rb # Testes do modelo TimeRegister
+│   ├── user_spec.rb       # User model tests
+│   └── time_register_spec.rb # TimeRegister model tests
 ├── requests/
 │   └── api/v1/
-│       ├── users_spec.rb  # Testes API de usuários
-│       └── time_registers_spec.rb # Testes API de registros
+│       ├── users_spec.rb  # Users API tests
+│       └── time_registers_spec.rb # Time registers API tests
 └── integration/
-    └── time_tracking_flow_spec.rb # Testes de integração
+    └── time_tracking_flow_spec.rb # Integration tests
 ```
 
-
-## 🚀 Como Executar os Testes
+## How to Run Tests
 
 ```bash
-# Instalar dependências
+# Install dependencies
 bundle install
 
-# Configurar banco de teste
+# Setup test database
 rails db:create db:migrate RAILS_ENV=test
 
-# Executar todos os testes
+# Run all tests
 bundle exec rspec
 
-# Executar com formato detalhado
+# Run with detailed format
 bundle exec rspec --format documentation
 
-# Executar testes específicos
+# Run specific tests
 bundle exec rspec spec/models/
 bundle exec rspec spec/requests/
 bundle exec rspec spec/integration/
 ```
 
-## 📈 Relatório de Cobertura
+## Coverage Report
 
-O relatório HTML detalhado está disponível em `coverage/index.html` após executar os testes.
+The detailed HTML report is available at `coverage/index.html` after running tests.
 
-## ✨ Recursos Utilizados
+## Resources Used
 
-- **RSpec Rails**: Framework de testes principal
-- **FactoryBot**: Geração de dados de teste
-- **Faker**: Dados realísticos aleatórios
-- **Shoulda Matchers**: Testes de validação simplificados
-- **SimpleCov**: Análise de cobertura de código
-- **DatabaseCleaner**: Limpeza de dados entre testes
+- **RSpec Rails**: Main testing framework
+- **FactoryBot**: Test data generation
+- **Faker**: Realistic random data
+- **Shoulda Matchers**: Simplified validation tests
+- **SimpleCov**: Code coverage analysis
+- **DatabaseCleaner**: Data cleanup between tests

@@ -11,10 +11,10 @@ RSpec.describe 'Api::V1::Reports', type: :request do
     context 'when report exists' do
       it 'returns report status information' do
         get "/api/v1/reports/#{process_id}/status"
-        
+
         expect(response).to have_http_status(:ok)
         expect(response.content_type).to eq('application/json; charset=utf-8')
-        
+
         json_response = JSON.parse(response.body)
         expect(json_response).to include(
           'process_id' => process_id,
@@ -29,7 +29,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
         it 'returns queued status' do
           get "/api/v1/reports/#{process_id}/status"
-          
+
           json_response = JSON.parse(response.body)
           expect(json_response['status']).to eq('queued')
           expect(json_response['progress']).to eq(0)
@@ -41,7 +41,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
         it 'returns processing status with progress' do
           get "/api/v1/reports/#{process_id}/status"
-          
+
           json_response = JSON.parse(response.body)
           expect(json_response['status']).to eq('processing')
           expect(json_response['progress']).to eq(50)
@@ -53,7 +53,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
         it 'returns completed status' do
           get "/api/v1/reports/#{process_id}/status"
-          
+
           json_response = JSON.parse(response.body)
           expect(json_response['status']).to eq('completed')
           expect(json_response['progress']).to eq(100)
@@ -66,7 +66,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
         it 'returns failed status with error message' do
           get "/api/v1/reports/#{process_id}/status"
-          
+
           json_response = JSON.parse(response.body)
           expect(json_response['status']).to eq('failed')
           expect(json_response['progress']).to eq(0)
@@ -80,7 +80,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
       it 'returns not found error' do
         get "/api/v1/reports/#{invalid_process_id}/status"
-        
+
         expect(response).to have_http_status(:not_found)
         json_response = JSON.parse(response.body)
         expect(json_response['error']).to eq('Report not found')
@@ -94,7 +94,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
       it 'downloads the CSV file' do
         get "/api/v1/reports/#{process_id}/download"
-        
+
         expect(response).to have_http_status(:ok)
         expect(response.content_type).to eq('text/csv')
         expect(response.headers['Content-Disposition']).to match(/attachment/)
@@ -103,14 +103,14 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
       it 'generates descriptive filename' do
         get "/api/v1/reports/#{process_id}/download"
-        
+
         filename_pattern = /relatorio_ponto_.+_\d{8}_\d{8}\.csv/
         expect(response.headers['Content-Disposition']).to match(filename_pattern)
       end
 
       it 'returns CSV content' do
         get "/api/v1/reports/#{process_id}/download"
-        
+
         expect(response.body).to include('Name,Email,Date')
         expect(response.body).to include('Test User,test@example.com')
       end
@@ -122,7 +122,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
         it 'returns unprocessable entity error' do
           get "/api/v1/reports/#{process_id}/download"
-          
+
           expect(response).to have_http_status(:unprocessable_entity)
           json_response = JSON.parse(response.body)
           expect(json_response['error']).to eq('Report is not ready for download. Current status: queued')
@@ -134,7 +134,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
         it 'returns unprocessable entity error' do
           get "/api/v1/reports/#{process_id}/download"
-          
+
           expect(response).to have_http_status(:unprocessable_entity)
           json_response = JSON.parse(response.body)
           expect(json_response['error']).to eq('Report is not ready for download. Current status: processing')
@@ -146,7 +146,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
         it 'returns unprocessable entity error' do
           get "/api/v1/reports/#{process_id}/download"
-          
+
           expect(response).to have_http_status(:unprocessable_entity)
           json_response = JSON.parse(response.body)
           expect(json_response['error']).to eq('Report is not ready for download. Current status: failed')
@@ -164,7 +164,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
       it 'returns not found error' do
         get "/api/v1/reports/#{process_id}/download"
-        
+
         expect(response).to have_http_status(:not_found)
         json_response = JSON.parse(response.body)
         expect(json_response['error']).to eq('Report file not found or has been cleaned up')
@@ -176,7 +176,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
       it 'returns not found error' do
         get "/api/v1/reports/#{invalid_process_id}/download"
-        
+
         expect(response).to have_http_status(:not_found)
         json_response = JSON.parse(response.body)
         expect(json_response['error']).to eq('Report not found')
@@ -185,10 +185,10 @@ RSpec.describe 'Api::V1::Reports', type: :request do
   end
 
   describe 'filename generation' do
-    let(:report) do 
-      create(:report, :completed, :with_file, 
-             user: user, 
-             start_date: Date.new(2025, 9, 1), 
+    let(:report) do
+      create(:report, :completed, :with_file,
+             user: user,
+             start_date: Date.new(2025, 9, 1),
              end_date: Date.new(2025, 9, 30))
     end
 
@@ -198,7 +198,7 @@ RSpec.describe 'Api::V1::Reports', type: :request do
 
     it 'generates filename with user name and date range' do
       get "/api/v1/reports/#{process_id}/download"
-      
+
       disposition = response.headers['Content-Disposition']
       expect(disposition).to include('relatorio_ponto_joao-da-silva_20250901_20250930.csv')
     end

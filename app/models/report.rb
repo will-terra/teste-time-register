@@ -15,19 +15,19 @@ class Report < ApplicationRecord
   scope :by_status, ->(status) { where(status: status) }
 
   def queued?
-    status == 'queued'
+    status == "queued"
   end
 
   def processing?
-    status == 'processing'
+    status == "processing"
   end
 
   def completed?
-    status == 'completed'
+    status == "completed"
   end
 
   def failed?
-    status == 'failed'
+    status == "failed"
   end
 
   def file_exists?
@@ -38,7 +38,7 @@ class Report < ApplicationRecord
 
   def set_defaults
     self.process_id ||= SecureRandom.uuid
-    self.status ||= 'queued'
+    self.status ||= "queued"
     self.progress ||= 0
   end
 
