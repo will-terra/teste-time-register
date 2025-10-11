@@ -1,5 +1,5 @@
 services:
-  # Banco de Dados PostgreSQL
+  # PostgreSQL Database
   db:
     image: postgres:16-alpine
     container_name: teste_time_register_db
@@ -23,7 +23,7 @@ services:
     networks:
       - app_network
 
-  # Redis (para cache e jobs em segundo plano)
+  # Redis (for cache and background jobs)
   redis:
     image: redis:7-alpine
     container_name: teste_time_register_redis
@@ -41,7 +41,7 @@ services:
     networks:
       - app_network
 
-  # Aplicação Rails
+  # Rails Application
   app:
     build:
       context: .
@@ -86,7 +86,7 @@ services:
       retries: 3
       start_period: 60s
 
-  # Worker de Jobs em Segundo Plano (para Solid Queue)
+  # Background Job Worker (for Solid Queue)
   worker:
     build:
       context: .

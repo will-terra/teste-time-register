@@ -1,43 +1,43 @@
 #!/bin/bash -e
 
-# Imprimir informações de inicialização
-echo "🚀 Starting Time Register Application..."
-echo "📅 $(date)"
-echo "🏠 Environment: ${RAILS_ENV:-development}"
-echo "🐳 Container: $(hostname)"
+# Print initialization information
+echo "Starting Time Register Application..."
+echo "$(date)"
+echo "Environment: ${RAILS_ENV:-development}"
+echo "Container: $(hostname)"
 
-# Habilitar jemalloc para reduzir uso de memória e latência
+# Enable jemalloc to reduce memory usage and latency
 if [ -z "${LD_PRELOAD+x}" ]; then
     LD_PRELOAD=$(find /usr/lib -name libjemalloc.so.2 -print -quit)
     export LD_PRELOAD
-    echo "🧠 JeMalloc habilitado: $LD_PRELOAD"
+    echo "JeMalloc habilitado: $LD_PRELOAD"
 fi
 
-# Aguardar até que o banco de dados esteja pronto
+# Wait until the database is ready
 if [ -n "$DATABASE_URL" ]; then
-    echo "🔍 Aguardando banco de dados..."
+    echo "Waiting for database..."
     until ./bin/rails runner "ActiveRecord::Base.connection.execute('SELECT 1')" >/dev/null 2>&1; do
-        echo "⏳ Banco de dados ainda não está pronto, aguardando 2 segundos..."
+        echo "Database is not ready yet, waiting 2 seconds..."
         sleep 2
     done
-    echo "✅ Banco de dados está pronto!"
+    echo "Database is ready!"
 fi
 
-# Configurar banco de dados se executando rails server
+# Configure database if running rails server
 if [ "${1}" = "./bin/rails" ] && [ "${2}" = "server" ]; then
-    echo "🗄️  Preparando banco de dados..."
+    echo "Preparing database..."
     ./bin/rails db:prepare
-    echo "✅ Banco de dados preparado!"
+    echo "Database prepared!"
 fi
 
-# Configurar banco de dados se executando solid_queue
+# Configure database if running solid_queue
 if [ "${1}" = "./bin/rails" ] && [ "${2}" = "solid_queue:start" ]; then
-    echo "🔄 Iniciando worker de jobs em segundo plano..."
+    echo "Starting background job worker..."
 fi
 
-# Criar diretórios necessários
+# Create necessary directories
 mkdir -p tmp/pids tmp/cache tmp/sockets log storage
 chmod -R 755 tmp log storage
 
-echo "🎯 Executando comando: $@"
+echo "Executing command: $@"
 exec "${@}"

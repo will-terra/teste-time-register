@@ -2,14 +2,14 @@
 
 require 'faker'
 
-puts "Iniciando população de dados..."
+puts "Starting data population..."
 
-# Configurar locale do Faker para português brasileiro
+# Configure Faker locale to Brazilian Portuguese
 Faker::Config.locale = 'pt-BR'
 
-# Método para gerar usuários
+# Method to generate users
 def create_users(count = 100)
-  puts "Criando #{count} usuários..."
+  puts "Creating #{count} users..."
 
   users = []
   count.times do |i|
@@ -25,20 +25,20 @@ def create_users(count = 100)
         users << user
       rescue ActiveRecord::RecordInvalid => e
         retries += 1
-        puts " Erro ao criar usuário (tentativa #{retries}): #{e.message}"
+        puts " Error creating user (attempt #{retries}): #{e.message}"
       end
     end
 
     print "." if (i + 1) % 10 == 0
   end
 
-  puts "\n #{count} usuários criados com sucesso!"
+  puts "\n #{count} users created successfully!"
 
-  # Retorna todos os usuários (existentes + novos)
+  # Returns all users (existing + new)
   User.all.limit(count)
 end
 
-# Método para gerar registros de ponto realistas
+# Method to generate realistic time register entries
 def create_time_registers_for_user(user, registers_count = 20)
   existing_registers = user.time_registers.count
 
@@ -48,43 +48,43 @@ def create_time_registers_for_user(user, registers_count = 20)
 
   registers_to_create = registers_count - existing_registers
 
-  # Gerar datas dos últimos 3 meses para simular histórico
+  # Generate dates from the last 3 months to simulate history
   end_date = Date.current
   start_date = end_date - 3.months
 
   date_range = (start_date..end_date).to_a.select(&:on_weekday?)
 
   registers_to_create.times do |i|
-    # Escolher uma data aleatória dos dias úteis
+    # Choose a random date from weekdays
     work_date = date_range.sample
 
-    # Simular horários comerciais com variações
+    # Simulate business hours with variations
     base_clock_in = work_date.beginning_of_day + 8.hours # 8:00
     base_clock_out = work_date.beginning_of_day + 18.hours # 18:00
 
-    # Adicionar variações realistas (±30 minutos na entrada, ±1 hora na saída)
+    # Add realistic variations (±30 minutes on entry, ±1 hour on exit)
     clock_in_variation = rand(-30..30).minutes
     clock_out_variation = rand(-60..60).minutes
 
     clock_in = base_clock_in + clock_in_variation
 
-    # Simular diferentes cenários
+    # Simulate different scenarios
     case rand(1..100)
     when 1..5
-      # 5% - Meio período (saída no almoço)
+      # 5% - Half period (left at lunch)
       clock_out = clock_in + 4.hours + rand(0..60).minutes
     when 6..10
-      # 5% - Hora extra
+      # 5% - Overtime
       clock_out = base_clock_out + rand(1..3).hours + clock_out_variation
     when 11..15
-      # 5% - Registros em aberto (esqueceu de bater saída)
+      # 5% - Open records (forgot to clock out)
       clock_out = nil
     else
-      # 85% - Horário normal com intervalo de almoço
+      # 85% - Normal hours with lunch break
       clock_out = base_clock_out + clock_out_variation
     end
 
-    # Evitar criar registros duplicados para a mesma data
+    # Avoid creating duplicate records for the same date
     existing_register = user.time_registers.where(
       "DATE(clock_in) = ?", work_date
     ).first
@@ -97,7 +97,7 @@ def create_time_registers_for_user(user, registers_count = 20)
         clock_out: clock_out
       )
     rescue ActiveRecord::RecordInvalid
-      # Se der erro (ex: usuário já tem registro em aberto), tentar criar um registro completo
+      # If there's an error (e.g., user already has an open record), try to create a complete record
       if clock_out.nil?
         user.time_registers.create!(
           clock_in: clock_in,
@@ -108,10 +108,10 @@ def create_time_registers_for_user(user, registers_count = 20)
   end
 end
 
-# Método para criar registros de ponto para todos os usuários
+# Method to create time register entries for all users
 def create_time_registers(users, registers_per_user = 20)
-  puts " Criando registros de ponto..."
-  puts " #{registers_per_user} registros por usuário"
+  puts " Creating time register entries..."
+  puts " #{registers_per_user} registers per user"
 
   users.each_with_index do |user, index|
     create_time_registers_for_user(user, registers_per_user)
@@ -121,24 +121,24 @@ def create_time_registers(users, registers_per_user = 20)
     end
   end
 
-  puts "\n Registros de ponto criados!"
+  puts "\n Time register entries created!"
 end
 
-# Executar população de dados
+# Execute data population
 begin
-  # Limpar cache único do Faker para permitir re-execução
+  # Clear Faker's unique cache to allow re-execution
   Faker::UniqueGenerator.clear
 
-  # Criar usuários
+  # Create users
   users = create_users(100)
 
-  # Criar registros de ponto
+  # Create time register entries
   create_time_registers(users, 20)
 
-  puts "\n População de dados concluída com sucesso!"
+  puts "\n Data population completed successfully!"
 
 rescue => e
-  puts "\n Erro durante a população de dados:"
+  puts "\n Error during data population:"
   puts "   #{e.message}"
   puts "   #{e.backtrace.first}"
 end

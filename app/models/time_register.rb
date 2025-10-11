@@ -1,3 +1,4 @@
+# Model representing a time register entry
 class TimeRegister < ApplicationRecord
   belongs_to :user
 
@@ -7,6 +8,7 @@ class TimeRegister < ApplicationRecord
 
   private
 
+  # Ensures a user cannot have more than one open time register
   def user_cannot_have_multiple_open_registers
     return unless user && clock_out.nil?
 
@@ -18,6 +20,7 @@ class TimeRegister < ApplicationRecord
     end
   end
 
+  # Validates that clock out time is after clock in time
   def clock_out_must_be_after_clock_in
     return unless clock_in && clock_out
 

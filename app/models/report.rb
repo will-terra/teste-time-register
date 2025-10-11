@@ -1,3 +1,4 @@
+# Model representing a report generation process
 class Report < ApplicationRecord
   belongs_to :user
 
@@ -12,8 +13,10 @@ class Report < ApplicationRecord
 
   before_validation :set_defaults, on: :create
 
+  # Scope to filter reports by status
   scope :by_status, ->(status) { where(status: status) }
 
+  # Status check methods
   def queued?
     status == "queued"
   end
@@ -30,18 +33,21 @@ class Report < ApplicationRecord
     status == "failed"
   end
 
+  # Checks if the report file exists on disk
   def file_exists?
     file_path.present? && File.exist?(file_path)
   end
 
   private
 
+  # Sets default values for new reports
   def set_defaults
     self.process_id ||= SecureRandom.uuid
     self.status ||= "queued"
     self.progress ||= 0
   end
 
+  # Validates that end date is after start date
   def end_date_after_start_date
     return unless start_date && end_date
 

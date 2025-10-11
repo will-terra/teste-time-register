@@ -1,90 +1,90 @@
-# Veja https://docs.docker.com/engine/reference/builder/#dockerignore-file para mais sobre ignorar arquivos.
+# See https://docs.docker.com/engine/reference/builder/#dockerignore-file for more about ignoring files.
 
-# Arquivos Git
+# Git files
 /.git/
 /.gitignore
 /.gitattributes
 /.gitmodules
 
-# Documentação
+# Documentation
 README.md
 TESTES_README.md
 /doc/
 /docs/
 
-# Configuração do Bundler
+# Bundler configuration
 /.bundle
 
-# Arquivos de ambiente
+# Environment files
 /.env*
 !/.env.example
 
-# Arquivos de segurança
+# Security files
 /config/master.key
 /config/credentials/*.key
 
-# Logs e arquivos temporários
+# Logs and temporary files
 /log/*
 /tmp/*
 !/log/.keep
 !/tmp/.keep
 *.log
 
-# Arquivos de processo
+# Process files
 /tmp/pids/*
 !/tmp/pids/.keep
 
-# Arquivos de armazenamento
+# Storage files
 /storage/*
 !/storage/.keep
 /tmp/storage/*
 !/tmp/storage/.keep
 
-# Arquivos de teste e cobertura
+# Test and coverage files
 /spec/
 /test/
 /coverage/
 /.rspec
 /.simplecov
 
-# Ferramentas de desenvolvimento
+# Development tools
 /.vscode/
 /.idea/
 *.sublime-*
 /.devcontainer
 
-# Arquivos do sistema operacional
+# Operating system files
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Arquivos CI/CD
+# CI/CD files
 /.github
 /.gitlab-ci.yml
 /.travis.yml
 /.circleci/
 
-# Artefatos de build
+# Build artifacts
 /node_modules/
 /vendor/bundle/
 
-# Deploy Kamal
+# Kamal deployment
 /config/deploy*.yml
 /.kamal
 
-# Próprios arquivos Docker
+# Docker files
 /.dockerignore
 /Dockerfile*
 /docker-compose*.yml
 
-# Arquivos de banco de dados
+# Database files
 *.sqlite3
 *.sqlite3-*
 
-# Configurações de editor
+# Editor configurations
 /.rubocop_todo.yml
 /.rubocop-*
 
-# Arquivos de tempo de execução
+# Runtime files
 *.pid
 .sass-cache/

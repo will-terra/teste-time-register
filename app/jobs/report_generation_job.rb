@@ -3,30 +3,30 @@ require "csv"
 class ReportGenerationJob < ApplicationJob
   queue_as :reports
 
-  # Gera um relatório de ponto em formato CSV
+  # Generates a time report in CSV format
   def perform(report_id)
     report = Report.find(report_id)
 
     begin
-      # Atualiza status para processing
+      # Updates status to processing
       report.update!(status: "processing", progress: 10)
 
       user = report.user
       time_registers = fetch_time_registers(user, report.start_date, report.end_date)
 
-      # Atualiza progresso
+      # Updates progress
       report.update!(progress: 30)
 
-      # Gera o arquivo CSV
+      # Generates the CSV file
       csv_content = generate_csv_content(time_registers, user)
 
-      # Atualiza progresso
+      # Updates progress
       report.update!(progress: 70)
 
-      # Salva o arquivo
+      # Saves the file
       file_path = save_csv_file(csv_content, report.process_id)
 
-      # Finaliza com sucesso
+      # Finishes successfully
       report.update!(
         status: "completed",
         progress: 100,
@@ -50,6 +50,7 @@ class ReportGenerationJob < ApplicationJob
 
   private
 
+  # Fetches time registers for the user within the date range
   def fetch_time_registers(user, start_date, end_date)
     user.time_registers
         .where(clock_in: start_date.beginning_of_day..end_date.end_of_day)
@@ -57,9 +58,10 @@ class ReportGenerationJob < ApplicationJob
         .includes(:user)
   end
 
+  # Generates CSV content with headers and data rows
   def generate_csv_content(time_registers, user)
     CSV.generate(headers: true) do |csv|
-      # Cabeçalho do CSV
+      # CSV header
       csv << [
         "Nome do Usuário",
         "Email",
@@ -82,7 +84,7 @@ class ReportGenerationJob < ApplicationJob
         ]
       end
 
-      # Adiciona linha de totais se houver registros
+      # Adds total line if there are records
       if time_registers.any?
         total_hours = calculate_total_hours(time_registers)
         csv << [ "", "", "", "", "", "Total: #{total_hours}", "" ]
@@ -90,6 +92,7 @@ class ReportGenerationJob < ApplicationJob
     end
   end
 
+  # Calculates worked hours for a single register
   def calculate_worked_hours(register)
     return "0h 0m" unless register.clock_out
 
@@ -100,6 +103,7 @@ class ReportGenerationJob < ApplicationJob
     "#{hours}h #{minutes}m"
   end
 
+  # Calculates total worked hours across all registers
   def calculate_total_hours(time_registers)
     total_seconds = time_registers.sum do |register|
       next 0 unless register.clock_out
@@ -112,17 +116,18 @@ class ReportGenerationJob < ApplicationJob
     "#{total_hours}h #{total_minutes}m"
   end
 
+  # Saves the CSV content to a temporary file
   def save_csv_file(csv_content, process_id)
-    # Armazena arquivos temporariamente em tmp/reports/
-    # Estes arquivos são automaticamente gerenciados pelo sistema
+    # Stores files temporarily in tmp/reports/
+    # These files are automatically managed by the system
     reports_dir = Rails.root.join("tmp", "reports")
     FileUtils.mkdir_p(reports_dir) unless Dir.exist?(reports_dir)
 
-    # Nome do arquivo com timestamp para evitar colisões
+    # File name with timestamp to avoid collisions
     filename = "report_#{process_id}_#{Time.current.to_i}.csv"
     file_path = reports_dir.join(filename)
 
-    # Escreve o arquivo
+    # Writes the file
     File.write(file_path, csv_content)
 
     file_path.to_s

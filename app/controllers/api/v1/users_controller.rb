@@ -52,7 +52,7 @@ class Api::V1::UsersController < ApplicationController
       return render json: { error: "start_date and end_date are required" }, status: :bad_request
     end
 
-    # Validação das datas
+    # Date validation
     start_date = Date.parse(params[:start_date])
     end_date = Date.parse(params[:end_date])
 
@@ -60,14 +60,14 @@ class Api::V1::UsersController < ApplicationController
       return render json: { error: "end_date must be after start_date" }, status: :bad_request
     end
 
-    # Cria o registro do relatório
+    # Creates the report record
     report = @user.reports.build(
       start_date: start_date,
       end_date: end_date
     )
 
     if report.save
-      # Agenda o job para gerar o relatório
+      # Schedules the job to generate the report
       ReportGenerationJob.perform_later(report.id)
 
       render json: {

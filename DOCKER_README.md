@@ -1,33 +1,33 @@
 
 
-## 🚀 Como Usar
+## How to Use
 
-### 1. Preparar Ambiente
+### 1. Prepare Environment
 ```bash
-# Copiar configurações
+# Copy configurations
 cp .env.example .env
 
-# Iniciar containers
+# Start containers
 docker compose up -d
 ```
 
-### 2. Configurar Base de Dados  
+### 2. Configure Database
 ```bash
 docker compose exec app rails db:create db:migrate
 ```
 
-### 3. Executar Testes
+### 3. Run Tests
 ```bash
 docker compose exec app rspec
 ```
 
-## ✅ Verificação
+## Verification
 
-- **Aplicação**: http://localhost:3000
+- **Application**: http://localhost:3000
 - **Health Check**: http://localhost:3000/up
 - **Status**: `docker compose ps`
 
-## 🏗️ Implementação
+## Implementation
 
 ### Containers
 - **app** - Rails Application (Ruby 3.4.6 + Multi-stage build)
@@ -35,31 +35,31 @@ docker compose exec app rspec
 - **redis** - Cache & Background Jobs
 - **worker** - Solid Queue Worker
 
-### Características  
-- **Network isolada** entre containers
-- **Volumes persistentes** para dados
-- **Health checks** em todos os serviços
-- **Variáveis de ambiente** configuráveis via `.env`
+### Features
+- **Isolated network** between containers
+- **Persistent volumes** for data
+- **Health checks** on all services
+- **Environment variables** configurable via `.env`
 
-### Arquivos Docker
-- `Dockerfile` - Multi-stage build otimizado
-- `docker-compose.yml` - Orquestração dos serviços
-- `.dockerignore` - Otimização do build  
-- `.env.example` - Template de configuração
+### Docker Files
+- `Dockerfile` - Optimized multi-stage build
+- `docker-compose.yml` - Service orchestration
+- `.dockerignore` - Build optimization  
+- `.env.example` - Configuration template
 
-## 🛠️ Comandos Extras
+## Extra Commands
 
 ```bash
-# Parar containers
+# Stop containers
 docker compose down
 
-# Ver logs  
+# View logs  
 docker compose logs -f app
 
-# Console Rails
+# Rails console
 docker compose exec app rails console
 
-# Shell do container
+# Container shell
 docker compose exec app bash
 ```
 

@@ -1,7 +1,9 @@
+# Controller for managing time register entries
 class Api::V1::TimeRegistersController < ApplicationController
   before_action :set_time_register, only: [ :show, :update, :destroy ]
 
   # GET /api/v1/time_registers
+  # Lists all time registers with associated users
   def index
     @time_registers = TimeRegister.all.includes(:user).order(:clock_in)
 
@@ -9,11 +11,13 @@ class Api::V1::TimeRegistersController < ApplicationController
   end
 
   # GET /api/v1/time_registers/:id
+  # Shows a specific time register
   def show
     render json: @time_register
   end
 
   # POST /api/v1/time_registers
+  # Creates a new time register entry
   def create
     @time_register = TimeRegister.new(time_register_params)
 
@@ -25,6 +29,7 @@ class Api::V1::TimeRegistersController < ApplicationController
   end
 
   # PUT /api/v1/time_registers/:id
+  # Updates an existing time register
   def update
     if @time_register.update(time_register_params)
       render json: @time_register
@@ -34,6 +39,7 @@ class Api::V1::TimeRegistersController < ApplicationController
   end
 
   # DELETE /api/v1/time_registers/:id
+  # Deletes a time register entry
   def destroy
     @time_register.destroy!
     head :no_content
@@ -41,12 +47,14 @@ class Api::V1::TimeRegistersController < ApplicationController
 
   private
 
+  # Finds the time register by ID or returns 404
   def set_time_register
     @time_register = TimeRegister.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: "Time register not found" }, status: :not_found
   end
 
+  # Permitted parameters for time register creation/update
   def time_register_params
     params.require(:time_register).permit(:user_id, :clock_in, :clock_out)
   end
