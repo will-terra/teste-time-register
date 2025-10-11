@@ -3,20 +3,28 @@
 require 'rails_helper'
 
 RSpec.describe Report, type: :model do
+  # Tests model associations
   describe 'associations' do
+    # Verifies that Report belongs to User
     it { should belong_to(:user) }
   end
 
+  # Tests model validations
   describe 'validations' do
     subject { build(:report) }
 
+    # Tests that process_id must be unique (case insensitive)
     it { should validate_uniqueness_of(:process_id).ignoring_case_sensitivity }
+    # Tests that status must be one of the allowed values
     it { should validate_inclusion_of(:status).in_array(%w[queued processing completed failed]) }
+    # Tests that start_date is required
     it { should validate_presence_of(:start_date) }
+    # Tests that end_date is required
     it { should validate_presence_of(:end_date) }
+    # Tests that progress is a number between 0 and 100
     it { should validate_numericality_of(:progress).is_in(0..100) }
 
-    # Testes customizados para campos com valores padrão
+    # Custom tests for fields with default values
     it 'validates presence of process_id after creation' do
       report = Report.create(user: create(:user), start_date: 1.week.ago.to_date, end_date: Date.current)
       expect(report.process_id).to be_present
@@ -32,6 +40,7 @@ RSpec.describe Report, type: :model do
       expect(report.progress).to be_present
     end
 
+    # Tests the custom validation for date order
     describe 'end_date_after_start_date validation' do
       it 'is valid when end_date is after start_date' do
         report = build(:report, start_date: 1.week.ago.to_date, end_date: Date.current)
@@ -52,7 +61,9 @@ RSpec.describe Report, type: :model do
     end
   end
 
+  # Tests model callbacks
   describe 'callbacks' do
+    # Tests the before_validation callback that sets default values
     describe 'before_validation :set_defaults' do
       context 'on create' do
         it 'sets process_id if not present' do
@@ -96,6 +107,7 @@ RSpec.describe Report, type: :model do
     end
   end
 
+  # Tests model scopes
   describe 'scopes' do
     let!(:queued_report) { create(:report, status: 'queued') }
     let!(:processing_report) { create(:report, :processing) }
@@ -103,6 +115,7 @@ RSpec.describe Report, type: :model do
     let!(:failed_report) { create(:report, :failed) }
 
     describe '.by_status' do
+      # Tests that the scope filters reports by status
       it 'returns reports with specified status' do
         expect(Report.by_status('queued')).to contain_exactly(queued_report)
         expect(Report.by_status('processing')).to contain_exactly(processing_report)
@@ -112,10 +125,12 @@ RSpec.describe Report, type: :model do
     end
   end
 
+  # Tests instance methods
   describe 'instance methods' do
     let(:report) { create(:report) }
 
     describe 'status check methods' do
+      # Tests the boolean status check methods
       it '#queued? returns true for queued status' do
         report.update!(status: 'queued')
         expect(report.queued?).to be true
@@ -150,6 +165,7 @@ RSpec.describe Report, type: :model do
     end
 
     describe '#file_exists?' do
+      # Tests the method that checks if the report file exists
       it 'returns false when file_path is nil' do
         report.update!(file_path: nil)
         expect(report.file_exists?).to be false
@@ -161,7 +177,7 @@ RSpec.describe Report, type: :model do
       end
 
       it 'returns true when file_path is present and file exists' do
-        # Cria um arquivo temporário
+        # Creates a temporary file
         temp_file = Tempfile.new([ 'test_report', '.csv' ])
         temp_file.write('test,data')
         temp_file.close
@@ -169,16 +185,18 @@ RSpec.describe Report, type: :model do
         report.update!(file_path: temp_file.path)
         expect(report.file_exists?).to be true
 
-        # Limpa o arquivo temporário
+        # Cleans up the temporary file
         temp_file.unlink
       end
     end
   end
 
+  # Tests dependent destroy behavior
   describe 'dependent destroy' do
     let(:user) { create(:user) }
     let!(:reports) { create_list(:report, 3, user: user) }
 
+    # Tests that reports are destroyed when their associated user is destroyed
     it 'destroys associated reports when user is destroyed' do
       report_ids = reports.map(&:id)
 

@@ -5,8 +5,10 @@ require 'rails_helper'
 RSpec.describe 'Time Tracking Integration Flow', type: :request do
   let(:valid_headers) { { 'Content-Type' => 'application/json' } }
 
+  # Tests the complete user and time tracking workflow
   describe 'Complete user and time tracking workflow' do
     context 'new user registration and time tracking' do
+      # Verifies the full lifecycle: user creation, time tracking, updates, and deletion
       it 'creates user, tracks time, and manages multiple time entries' do
         # Step 1: Create a new user
         user_params = { user: { name: 'John Doe', email: 'john@example.com' } }
@@ -140,14 +142,16 @@ RSpec.describe 'Time Tracking Integration Flow', type: :request do
     end
   end
 
+  # Tests concurrent time tracking for multiple users
   describe 'Multiple users time tracking scenarios' do
     let(:user1) { create(:user, name: 'Alice', email: 'alice@example.com') }
     let(:user2) { create(:user, name: 'Bob', email: 'bob@example.com') }
 
+    # Verifies that multiple users can track time concurrently without interference
     it 'handles concurrent time tracking for multiple users' do
-      # Both users can have open registers simultaneously
+      # Setup: Two users are created for testing concurrent operations
 
-      # User 1 clocks in
+      # Action: User 1 clocks in, creating an open time register
       user1_clock_in = {
         time_register: {
           user_id: user1.id,
@@ -159,7 +163,7 @@ RSpec.describe 'Time Tracking Integration Flow', type: :request do
       expect(response).to have_http_status(:created)
       user1_register_id = JSON.parse(response.body)['id']
 
-      # User 2 clocks in
+      # Action: User 2 clocks in, creating another open time register
       user2_clock_in = {
         time_register: {
           user_id: user2.id,
@@ -171,21 +175,22 @@ RSpec.describe 'Time Tracking Integration Flow', type: :request do
       expect(response).to have_http_status(:created)
       user2_register_id = JSON.parse(response.body)['id']
 
-      # Both users should have open registers
+      # Assert: Both users have open registers
       expect(user1.has_open_time_register?).to be true
       expect(user2.has_open_time_register?).to be true
 
-      # Get all time registers - should show both users' entries
+      # Action: Retrieve all time registers
       get '/api/v1/time_registers'
       all_registers = JSON.parse(response.body)
 
       user1_entries = all_registers.select { |r| r['user_id'] == user1.id }
       user2_entries = all_registers.select { |r| r['user_id'] == user2.id }
 
+      # Assert: The list includes entries for both users
       expect(user1_entries.size).to eq(1)
       expect(user2_entries.size).to eq(1)
 
-      # User 1 clocks out
+      # Action: User 1 clocks out, closing their register
       clock_out_params = { time_register: { clock_out: 30.minutes.ago.iso8601 } }
 
       put "/api/v1/time_registers/#{user1_register_id}",
@@ -194,11 +199,11 @@ RSpec.describe 'Time Tracking Integration Flow', type: :request do
 
       expect(response).to have_http_status(:success)
 
-      # User 1 no longer has open register, User 2 still does
+      # Assert: User 1 no longer has an open register, but User 2 does
       expect(user1.reload.has_open_time_register?).to be false
       expect(user2.reload.has_open_time_register?).to be true
 
-      # User 1 can now create another open register
+      # Action: User 1 clocks in again, creating a new open register
       new_user1_clock_in = {
         time_register: {
           user_id: user1.id,
@@ -209,17 +214,19 @@ RSpec.describe 'Time Tracking Integration Flow', type: :request do
       post '/api/v1/time_registers', params: new_user1_clock_in.to_json, headers: valid_headers
       expect(response).to have_http_status(:created)
 
-      # Now both users have open registers again
+      # Assert: Both users have open registers once more
       expect(user1.reload.has_open_time_register?).to be true
       expect(user2.reload.has_open_time_register?).to be true
     end
   end
 
+  # Tests error handling and edge cases
   describe 'Error handling and edge cases' do
     let(:user) { create(:user) }
 
+    # Verifies that various error scenarios are handled gracefully
     it 'handles various error scenarios gracefully' do
-      # Try to create time register for non-existent user
+      # Test invalid user ID when creating time register
       invalid_user_params = {
         time_register: {
           user_id: 999999,
@@ -230,7 +237,7 @@ RSpec.describe 'Time Tracking Integration Flow', type: :request do
       post '/api/v1/time_registers', params: invalid_user_params.to_json, headers: valid_headers
       expect(response).to have_http_status(:unprocessable_content)
 
-      # Try to update non-existent time register
+      # Test updating non-existent time register
       put '/api/v1/time_registers/999999',
           params: { time_register: { clock_out: 1.hour.ago.iso8601 } }.to_json,
           headers: valid_headers
@@ -238,15 +245,15 @@ RSpec.describe 'Time Tracking Integration Flow', type: :request do
       expect(response).to have_http_status(:not_found)
       expect(JSON.parse(response.body)['error']).to eq('Time register not found')
 
-      # Try to get non-existent user's time registers
+      # Test accessing time registers for non-existent user
       get '/api/v1/users/999999/time_registers'
       expect(response).to have_http_status(:not_found)
       expect(JSON.parse(response.body)['error']).to eq('User not found')
 
-      # Create valid time register
+      # Create valid time register for testing validation
       time_register = create(:time_register, :open, user: user)
 
-      # Try to set clock_out before clock_in
+      # Test setting clock_out before clock_in (validation error)
       invalid_update = {
         time_register: {
           clock_out: (time_register.clock_in - 1.hour).iso8601
@@ -266,19 +273,20 @@ RSpec.describe 'Time Tracking Integration Flow', type: :request do
       expect(time_register.clock_out).to be_nil
     end
 
+    # Verifies data consistency during complex operations
     it 'maintains data consistency during complex operations' do
-      # Create user with existing closed time registers
+      # Setup: Create user with existing closed time registers
       user_with_history = create(:user, :with_time_registers)
       initial_count = user_with_history.time_registers.count
 
-      # Create an open register
+      # Action: Create an open register for the user
       open_register = create(:time_register, :open, user: user_with_history)
 
-      # Verify total count
+      # Assert: User now has one more register and has an open one
       expect(user_with_history.time_registers.count).to eq(initial_count + 1)
       expect(user_with_history.has_open_time_register?).to be true
 
-      # Try to create another open register (should fail)
+      # Action: Try to create another open register (should fail due to business rule)
       duplicate_params = {
         time_register: {
           user_id: user_with_history.id,
@@ -292,18 +300,18 @@ RSpec.describe 'Time Tracking Integration Flow', type: :request do
 
       expect(response).to have_http_status(:unprocessable_content)
 
-      # Close the open register
+      # Action: Close the open register
       put "/api/v1/time_registers/#{open_register.id}",
           params: { time_register: { clock_out: 15.minutes.ago.iso8601 } }.to_json,
           headers: valid_headers
 
       expect(response).to have_http_status(:success)
 
-      # Now should be able to create new open register
+      # Action: Now create new open register (should succeed after closing previous)
       post '/api/v1/time_registers', params: duplicate_params.to_json, headers: valid_headers
       expect(response).to have_http_status(:created)
 
-      # Verify final state
+      # Assert: Final state - user has two more registers and one open
       user_with_history.reload
       expect(user_with_history.time_registers.count).to eq(initial_count + 2)
       expect(user_with_history.has_open_time_register?).to be true

@@ -24,7 +24,7 @@ class Api::V1::TimeRegistersController < ApplicationController
     if @time_register.save
       render json: @time_register, status: :created
     else
-      render json: @time_register.errors, status: :unprocessable_entity
+      render json: @time_register.errors, status: :unprocessable_content
     end
   end
 
@@ -34,7 +34,7 @@ class Api::V1::TimeRegistersController < ApplicationController
     if @time_register.update(time_register_params)
       render json: @time_register
     else
-      render json: @time_register.errors, status: :unprocessable_entity
+      render json: @time_register.errors, status: :unprocessable_content
     end
   end
 

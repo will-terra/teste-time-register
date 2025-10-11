@@ -21,7 +21,7 @@ class Api::V1::ReportsController < ApplicationController
     unless @report.completed?
       return render json: {
         error: "Report is not ready for download. Current status: #{@report.status}"
-      }, status: :unprocessable_entity
+      }, status: :unprocessable_content
     end
 
     # Check if the report file exists

@@ -7,18 +7,22 @@ RSpec.describe 'Api::V1::Users', type: :request do
   let(:invalid_attributes) { { name: '', email: 'invalid-email' } }
   let(:valid_headers) { { 'Content-Type' => 'application/json' } }
 
+  # Tests the GET /api/v1/users endpoint (index action)
   describe 'GET /api/v1/users' do
+    # Verifies that the endpoint responds successfully
     it 'returns http success' do
       get '/api/v1/users'
       expect(response).to have_http_status(:success)
     end
 
+    # Verifies that empty collection returns empty array
     it 'returns empty array when no users exist' do
       get '/api/v1/users'
       expect(response).to have_http_status(:success)
       expect(JSON.parse(response.body)).to eq([])
     end
 
+    # Verifies that all users are returned
     it 'returns all users' do
       user1 = create(:user, name: 'John Doe', email: 'john@example.com')
       user2 = create(:user, name: 'Jane Smith', email: 'jane@example.com')
@@ -35,6 +39,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       )
     end
 
+    # Verifies that user IDs are included in responses
     it 'includes user IDs in the response' do
       user = create(:user)
 
@@ -46,9 +51,11 @@ RSpec.describe 'Api::V1::Users', type: :request do
     end
   end
 
+  # Tests the GET /api/v1/users/:id endpoint (show action)
   describe 'GET /api/v1/users/:id' do
     let(:user) { create(:user) }
 
+    # Verifies that individual users can be retrieved
     it 'returns the user' do
       get "/api/v1/users/#{user.id}"
 
@@ -59,6 +66,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(response_body['email']).to eq(user.email)
     end
 
+    # Verifies that non-existent users return 404
     it 'returns 404 when user does not exist' do
       get '/api/v1/users/999999'
 
@@ -66,6 +74,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(JSON.parse(response.body)['error']).to eq('User not found')
     end
 
+    # Verifies that invalid ID formats return 404
     it 'returns 404 for invalid ID format' do
       get '/api/v1/users/invalid-id'
 
@@ -74,7 +83,9 @@ RSpec.describe 'Api::V1::Users', type: :request do
     end
   end
 
+  # Tests the POST /api/v1/users endpoint (create action)
   describe 'POST /api/v1/users' do
+    # Verifies that users can be created with valid attributes
     it 'creates a new user with valid attributes' do
       expect {
         post '/api/v1/users',
@@ -88,6 +99,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(response_body['email']).to eq('john@example.com')
     end
 
+    # Verifies that invalid attributes are rejected
     it 'does not create user with invalid attributes' do
       expect {
         post '/api/v1/users',
@@ -95,20 +107,22 @@ RSpec.describe 'Api::V1::Users', type: :request do
              headers: valid_headers
       }.not_to change(User, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
     end
 
+    # Verifies that validation errors are returned for invalid attributes
     it 'returns validation errors for invalid attributes' do
       post '/api/v1/users',
            params: { user: invalid_attributes }.to_json,
            headers: valid_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       response_body = JSON.parse(response.body)
       expect(response_body).to have_key('name')
       expect(response_body).to have_key('email')
     end
 
+    # Verifies that duplicate emails are prevented
     it 'prevents duplicate emails' do
       create(:user, email: 'john@example.com')
 
@@ -118,11 +132,12 @@ RSpec.describe 'Api::V1::Users', type: :request do
              headers: valid_headers
       }.not_to change(User, :count)
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       response_body = JSON.parse(response.body)
       expect(response_body['email']).to include('has already been taken')
     end
 
+    # Verifies that missing parameters are handled
     it 'handles missing user parameter' do
       post '/api/v1/users',
            params: { name: 'John' }.to_json,
@@ -132,10 +147,12 @@ RSpec.describe 'Api::V1::Users', type: :request do
     end
   end
 
+  # Tests the PUT /api/v1/users/:id endpoint (update action)
   describe 'PUT /api/v1/users/:id' do
     let(:user) { create(:user) }
     let(:new_attributes) { { name: 'Updated Name', email: 'updated@example.com' } }
 
+    # Verifies that users can be updated with valid attributes
     it 'updates the user with valid attributes' do
       put "/api/v1/users/#{user.id}",
           params: { user: new_attributes }.to_json,
@@ -147,6 +164,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(user.email).to eq('updated@example.com')
     end
 
+    # Verifies that updated data is returned
     it 'returns updated user data' do
       put "/api/v1/users/#{user.id}",
           params: { user: new_attributes }.to_json,
@@ -157,6 +175,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(response_body['email']).to eq('updated@example.com')
     end
 
+    # Verifies that invalid updates are rejected
     it 'does not update with invalid attributes' do
       original_name = user.name
 
@@ -164,22 +183,24 @@ RSpec.describe 'Api::V1::Users', type: :request do
           params: { user: invalid_attributes }.to_json,
           headers: valid_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       user.reload
       expect(user.name).to eq(original_name)
     end
 
+    # Verifies that validation errors are returned for invalid updates
     it 'returns validation errors for invalid attributes' do
       put "/api/v1/users/#{user.id}",
           params: { user: invalid_attributes }.to_json,
           headers: valid_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       response_body = JSON.parse(response.body)
       expect(response_body).to have_key('name')
       expect(response_body).to have_key('email')
     end
 
+    # Verifies that non-existent users return 404
     it 'returns 404 when user does not exist' do
       put '/api/v1/users/999999',
           params: { user: new_attributes }.to_json,
@@ -190,9 +211,11 @@ RSpec.describe 'Api::V1::Users', type: :request do
     end
   end
 
+  # Tests the DELETE /api/v1/users/:id endpoint (destroy action)
   describe 'DELETE /api/v1/users/:id' do
     let!(:user) { create(:user) }
 
+    # Verifies that users can be deleted
     it 'destroys the user' do
       expect {
         delete "/api/v1/users/#{user.id}"
@@ -201,6 +224,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(response).to have_http_status(:no_content)
     end
 
+    # Verifies that successful deletion returns no content
     it 'returns no content on successful deletion' do
       delete "/api/v1/users/#{user.id}"
 
@@ -208,6 +232,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(response.body).to be_empty
     end
 
+    # Verifies that non-existent users return 404
     it 'returns 404 when user does not exist' do
       delete '/api/v1/users/999999'
 
@@ -215,6 +240,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(JSON.parse(response.body)['error']).to eq('User not found')
     end
 
+    # Verifies that dependent time registers are destroyed with user
     it 'destroys associated time registers' do
       user_with_registers = create(:user, :with_time_registers)
 
@@ -224,9 +250,11 @@ RSpec.describe 'Api::V1::Users', type: :request do
     end
   end
 
+  # Tests the GET /api/v1/users/:user_id/time_registers nested endpoint
   describe 'GET /api/v1/users/:user_id/time_registers' do
     let(:user) { create(:user) }
 
+    # Verifies that user's time registers are returned
     it 'returns user time registers' do
       register1 = create(:time_register, user: user, clock_in: 2.hours.ago)
       register2 = create(:time_register, user: user, clock_in: 1.hour.ago)
@@ -238,6 +266,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(response_body.size).to eq(2)
     end
 
+    # Verifies that time registers are ordered by clock_in
     it 'returns time registers ordered by clock_in' do
       register1 = create(:time_register, user: user, clock_in: 2.hours.ago)
       register2 = create(:time_register, user: user, clock_in: 4.hours.ago)
@@ -250,6 +279,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(clock_in_times).to eq(clock_in_times.sort)
     end
 
+    # Verifies that empty array is returned for users with no registers
     it 'returns empty array for user with no time registers' do
       get "/api/v1/users/#{user.id}/time_registers"
 
@@ -257,6 +287,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(JSON.parse(response.body)).to eq([])
     end
 
+    # Verifies that only the user's registers are returned (no cross-contamination)
     it 'does not return other users time registers' do
       other_user = create(:user)
       create(:time_register, user: other_user)
@@ -269,6 +300,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
       expect(response_body.first['user_id']).to eq(user.id)
     end
 
+    # Verifies that non-existent users return 404
     it 'returns 404 when user does not exist' do
       get '/api/v1/users/999999/time_registers'
 
@@ -277,6 +309,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
     end
   end
 
+  # Tests the POST /api/v1/users/:user_id/reports endpoint for report generation
   describe 'POST /api/v1/users/:user_id/reports' do
     include ActiveJob::TestHelper
 
@@ -289,6 +322,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
     end
 
     context 'with valid parameters' do
+      # Verifies that report requests can be created
       it 'creates a new report request' do
         expect {
           post "/api/v1/users/#{user.id}/reports",
@@ -299,6 +333,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         expect(response).to have_http_status(:created)
       end
 
+      # Verifies that process_id and status are returned
       it 'returns process_id and status' do
         post "/api/v1/users/#{user.id}/reports",
              params: valid_report_params.to_json,
@@ -309,11 +344,12 @@ RSpec.describe 'Api::V1::Users', type: :request do
         expect(json_response).to have_key('status')
         expect(json_response['status']).to eq('queued')
 
-        # Verifica se é um UUID válido
+        # Verifies that it is a valid UUID
         uuid_pattern = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
         expect(json_response['process_id']).to match(uuid_pattern)
       end
 
+      # Verifies that ReportGenerationJob is enqueued
       it 'enqueues ReportGenerationJob' do
         expect {
           post "/api/v1/users/#{user.id}/reports",
@@ -322,6 +358,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         }.to have_enqueued_job(ReportGenerationJob)
       end
 
+      # Verifies that report is created with correct attributes
       it 'creates report with correct attributes' do
         post "/api/v1/users/#{user.id}/reports",
              params: valid_report_params.to_json,
@@ -335,6 +372,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         expect(report.progress).to eq(0)
       end
 
+      # Verifies that same-day reports are allowed
       it 'handles same day start and end dates' do
         same_day_params = {
           start_date: '2025-09-15',
@@ -352,6 +390,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
     end
 
     context 'with invalid parameters' do
+      # Verifies that missing start_date returns bad request
       it 'returns bad request when start_date is missing' do
         invalid_params = { end_date: '2025-09-30' }
 
@@ -364,6 +403,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         expect(json_response['error']).to eq('start_date and end_date are required')
       end
 
+      # Verifies that missing end_date returns bad request
       it 'returns bad request when end_date is missing' do
         invalid_params = { start_date: '2025-09-01' }
 
@@ -376,6 +416,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         expect(json_response['error']).to eq('start_date and end_date are required')
       end
 
+      # Verifies that missing both dates returns bad request
       it 'returns bad request when both dates are missing' do
         post "/api/v1/users/#{user.id}/reports",
              params: {}.to_json,
@@ -386,6 +427,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         expect(json_response['error']).to eq('start_date and end_date are required')
       end
 
+      # Verifies that end_date before start_date is rejected
       it 'returns bad request when end_date is before start_date' do
         invalid_params = {
           start_date: '2025-09-30',
@@ -401,6 +443,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         expect(json_response['error']).to eq('end_date must be after start_date')
       end
 
+      # Verifies that invalid date formats are rejected
       it 'returns bad request for invalid date format' do
         invalid_params = {
           start_date: 'invalid-date',
@@ -416,6 +459,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         expect(json_response['error']).to eq('Invalid date format. Use YYYY-MM-DD format')
       end
 
+      # Verifies that invalid parameters don't create reports
       it 'does not create report when validation fails' do
         invalid_params = {
           start_date: '2025-09-30',
@@ -429,6 +473,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         }.not_to change(Report, :count)
       end
 
+      # Verifies that jobs are not enqueued when validation fails
       it 'does not enqueue job when validation fails' do
         invalid_params = {
           start_date: '2025-09-30',
@@ -444,6 +489,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
     end
 
     context 'when user does not exist' do
+      # Verifies that non-existent users return 404
       it 'returns not found error' do
         post '/api/v1/users/999999/reports',
              params: valid_report_params.to_json,
@@ -454,6 +500,7 @@ RSpec.describe 'Api::V1::Users', type: :request do
         expect(json_response['error']).to eq('User not found')
       end
 
+      # Verifies that reports are not created for non-existent users
       it 'does not create report for non-existent user' do
         expect {
           post '/api/v1/users/999999/reports',
@@ -463,22 +510,43 @@ RSpec.describe 'Api::V1::Users', type: :request do
       end
     end
 
-    context 'error handling' do
+    context 'when report save fails' do
       before do
-        # Simula um erro interno durante a criação do report
-        allow_any_instance_of(User).to receive(:reports).and_raise(StandardError.new('Database error'))
+        # Simulates a scenario where report.save fails (e.g., database constraint violation)
+        allow_any_instance_of(Report).to receive(:save).and_return(false)
+        allow_any_instance_of(Report).to receive(:errors).and_return(
+          ActiveModel::Errors.new(Report.new).tap { |e| e.add(:base, 'Database constraint violation') }
+        )
       end
 
-      it 'handles internal server errors gracefully' do
-        expect(Rails.logger).to receive(:error).with(/Report creation failed/)
-
+      # Verifies that report save failures return unprocessable content
+      it 'returns unprocessable content when report save fails' do
         post "/api/v1/users/#{user.id}/reports",
              params: valid_report_params.to_json,
              headers: valid_headers
 
-        expect(response).to have_http_status(:internal_server_error)
+        expect(response).to have_http_status(:unprocessable_content)
         json_response = JSON.parse(response.body)
-        expect(json_response['error']).to eq('Internal server error')
+        expect(json_response).to have_key('base')
+        expect(json_response['base']).to include('Database constraint violation')
+      end
+
+      # Verifies that jobs are not enqueued when save fails
+      it 'does not enqueue job when report save fails' do
+        expect {
+          post "/api/v1/users/#{user.id}/reports",
+               params: valid_report_params.to_json,
+               headers: valid_headers
+        }.not_to have_enqueued_job(ReportGenerationJob)
+      end
+
+      # Verifies that reports are not created when save fails
+      it 'does not create report when save fails' do
+        expect {
+          post "/api/v1/users/#{user.id}/reports",
+               params: valid_report_params.to_json,
+               headers: valid_headers
+        }.not_to change(Report, :count)
       end
     end
   end

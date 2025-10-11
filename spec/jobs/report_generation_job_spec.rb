@@ -9,12 +9,12 @@ RSpec.describe ReportGenerationJob, type: :job do
   let(:report) { create(:report, user: user, start_date: 7.days.ago.to_date, end_date: Date.current) }
 
   before do
-    # Limpa diretório de testes
+    # Cleans test directory before each test
     FileUtils.rm_rf(Rails.root.join('tmp', 'reports'))
   end
 
   after do
-    # Limpa arquivos criados durante os testes
+    # Cleans files created during tests after each test
     FileUtils.rm_rf(Rails.root.join('tmp', 'reports'))
   end
 
@@ -73,7 +73,7 @@ RSpec.describe ReportGenerationJob, type: :job do
       it 'updates progress during execution' do
         perform_enqueued_jobs { described_class.perform_later(report.id) }
 
-        # Verifica se o progresso foi atualizado corretamente
+        # Verifies that progress was updated correctly
         report.reload
         expect(report.status).to eq('completed')
         expect(report.progress).to eq(100)
@@ -90,7 +90,7 @@ RSpec.describe ReportGenerationJob, type: :job do
 
         csv_content = File.read(report.file_path)
         lines = csv_content.split("\n")
-        expect(lines.length).to eq(1) # Apenas o cabeçalho
+        expect(lines.length).to eq(1) # Only the header
         expect(lines.first).to include('Nome do Usuário,Email,Data,Entrada,Saída,Horas Trabalhadas,Status')
       end
     end
@@ -109,7 +109,7 @@ RSpec.describe ReportGenerationJob, type: :job do
         csv_content = File.read(report.file_path)
 
         expect(csv_content).to include('Em andamento')
-        expect(csv_content).to include('0h 0m') # Sem horas trabalhadas para registro aberto
+        expect(csv_content).to include('0h 0m') # No worked hours for open register
       end
     end
 
@@ -123,7 +123,7 @@ RSpec.describe ReportGenerationJob, type: :job do
 
     context 'when an error occurs during generation' do
       before do
-        # Simula um erro durante a geração
+        # Simulates an error during generation
         allow(File).to receive(:write).and_raise(StandardError.new('Disk full'))
       end
 
@@ -183,7 +183,7 @@ RSpec.describe ReportGenerationJob, type: :job do
 
       it 'includes user association' do
         registers = job.send(:fetch_time_registers, user, 7.days.ago.to_date, Date.current)
-        # Verifica se o usuário foi incluído na consulta
+        # Verifies that the user was included in the query
         expect(registers.first.association(:user).loaded?).to be true
       end
     end
@@ -205,7 +205,7 @@ RSpec.describe ReportGenerationJob, type: :job do
     describe '#calculate_total_hours' do
       it 'calculates total hours for completed registers' do
         result = job.send(:calculate_total_hours, time_registers)
-        expect(result).to eq('9h 0m') # Apenas o primeiro registro tem clock_out
+        expect(result).to eq('9h 0m') # Only the first register has clock_out
       end
     end
   end
